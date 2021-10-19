@@ -1,0 +1,20 @@
+{
+	"name": "news-recommendation-core",
+	"private": true,
+	"version": "1.0.0",
+	"description": "",
+	"main": "src/index.ts",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": "true_mogician",
+	"license": "MIT",
+	"dependencies": {
+		"basic-type-extensions": "^1.16.0",
+		"news-recommendation-entity": "file:../Entity",
+		"python-shell": "^3.0.1"
+	},
+	"devDependencies": {
+		"@types/python-shell": "^1.0.3"
+	}
+}
