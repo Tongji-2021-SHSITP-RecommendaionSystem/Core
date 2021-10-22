@@ -5,7 +5,8 @@
 	"description": "",
 	"main": "src/index.ts",
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"train": "py -3.7 src/train.py",
+		"freeze": "pip freeze > requirements.txt"
 	},
 	"author": "true_mogician",
 	"license": "MIT",
