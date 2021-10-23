@@ -74,12 +74,12 @@ class Recommender:
         print("Configuring TensorBoard and Saver...")
         if not os.path.exists(tensorboard_dir):
             os.makedirs(tensorboard_dir)
-        tf.summary.scalar("loss", self.model.loss)
-        tf.summary.scalar("accuracy", self.model.acc)
-        merged_summary = tf.summary.merge_all()
-        writer = tf.summary.FileWriter(tensorboard_dir)
+        tf.compat.v1.summary.scalar("loss", self.model.loss)
+        tf.compat.v1.summary.scalar("accuracy", self.model.acc)
+        merged_summary = tf.compat.v1.summary.merge_all()
+        writer = tf.compat.v1.summary.FileWriter(tensorboard_dir)
 
-        saver = tf.train.Saver()
+        saver = tf.compat.v1.train.Saver()
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
@@ -92,8 +92,8 @@ class Recommender:
         time_dif = self.get_time_dif(start_time)
         print("Time usage:", time_dif)
 
-        session = tf.Session()
-        session.run(tf.global_variables_initializer())
+        session = tf.compat.v1.Session()
+        session.run(tf.compat.v1.global_variables_initializer())
         writer.add_graph(session.graph)
 
         print('Training and evaluating...')
@@ -170,9 +170,9 @@ class Recommender:
         news_test, user_test, contents = test_process_file(
             test_path, self.character_ids, self.category_ids, self.config.seq_length)
 
-        session = tf.Session()
-        session.run(tf.global_variables_initializer())
-        saver = tf.train.Saver()
+        session = tf.compat.v1.Session()
+        session.run(tf.compat.v1.global_variables_initializer())
+        saver = tf.compat.v1.train.Saver()
         saver.restore(sess=session, save_path=save_path)
         batch_test = test_batch_iter(
             news_test, user_test, batch_size=self.config.batch_size, max_length=self.config.num_words_title, candidate_num=self.config.candidate_len)
@@ -207,9 +207,9 @@ class Recommender:
     def calc_confidence(self, newses: Dict[str, List[Dict[str, str]]]) -> list:
         viewed_groups, candidates_groups = preprocess(
             newses['viewed'], newses['candidates'], self.character_ids, self.config.num_words_title)
-        session = tf.Session()
-        session.run(tf.global_variables_initializer())
-        saver = tf.train.Saver()
+        session = tf.compat.v1.Session()
+        session.run(tf.compat.v1.global_variables_initializer())
+        saver = tf.compat.v1.train.Saver()
         saver.restore(session, str(save_path))
         feed_dict = self.feed_data(viewed_groups, candidates_groups, 1.0)
         prediction: np.ndarray = session.run(

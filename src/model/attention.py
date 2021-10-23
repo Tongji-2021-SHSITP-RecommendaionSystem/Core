@@ -13,7 +13,7 @@ class AdditiveAttention(object):
         #self.dense  = tf.layers.dense(candidate_vector_dim, query_vector_dim)
         self.query_vector_dim=query_vector_dim
         self.candidate_vector_dim=candidate_vector_dim
-        self.attention_query_vector = tf.random_uniform(shape=[query_vector_dim,1],minval=-0.1,maxval=0.1)
+        self.attention_query_vector = tf.random.uniform(shape=[query_vector_dim,1],minval=-0.1,maxval=0.1)
         
     def attention(self, candidate_vector):
         """
@@ -22,15 +22,14 @@ class AdditiveAttention(object):
         Returns:
             (shape) batch_size, candidate_vector_dim
         """
-        with tf.name_scope('additive_attention'): 
-            dense  = tf.layers.dense(candidate_vector, self.query_vector_dim)
+        with tf.compat.v1.name_scope('additive_attention'): 
+            dense  = tf.compat.v1.layers.dense(candidate_vector, self.query_vector_dim)
             # batch_size, candidate_size, query_vector_dim
             temp = tf.tanh(dense)
-            # batch_size, candidate_size ÿ����һ��Ȩֵ
+            # batch_size, candidate_size
             candidate_weights = tf.nn.softmax(tf.squeeze(tf.matmul( temp, self.attention_query_vector),axis=2),axis=1)
             # batch_size, 1, candidate_size * batch_size, candidate_size, candidate_vector_dim =
             # batch_size, candidate_vector_dim
-            # ��ÿ���ʲ�ͬ��Ȩ�� Ȼ����� �õ������һ����������
             target =tf.squeeze( tf.matmul(tf.expand_dims(candidate_weights,1),candidate_vector),1)
             #target = tf.multiply(candidate_weights,candidate_vector)
             return target
@@ -40,15 +39,15 @@ class ScaledDotProductAttention(object):
         self.d_k = d_k
     
     def attention(self, Q, K, V, attn_mask=None):
-        with tf.name_scope('scaled_attention'): 
+        with tf.compat.v1.name_scope('scaled_attention'): 
             # batch_size,head_num, candidate_num, candidate_num
-            scores = tf.matmul(Q, tf.transpose(K,perm=[0,1,3,2])) / np.sqrt(self.d_k)
+            scores = tf.matmul(Q, tf.transpose(a=K,perm=[0,1,3,2])) / np.sqrt(self.d_k)
             scores = tf.exp(scores)
             if attn_mask is not None:
                 scores = scores * attn_mask
             # batch_size,head_num, candidate_num, 1
             # batch_size,head_num, candidate_num, candidate_num
-            attn = scores / (tf.expand_dims(tf.reduce_sum(scores, axis=-1),-1) + 1e-8)
+            attn = scores / (tf.expand_dims(tf.reduce_sum(input_tensor=scores, axis=-1),-1) + 1e-8)
             # batch_size,head_num, candidate_num, d_k
             context = tf.matmul(attn, V)
             return context, attn
@@ -66,24 +65,23 @@ class MultiHeadSelfAttention(object):
         Q:batch_size,candidate_num,embedding_size
         return : batch_size,candidate_num,embedding_size
         """
-        with tf.name_scope('multihead_selfattention'): 
+        with tf.compat.v1.name_scope('multihead_selfattention'): 
             if K is None:
                 K = Q
             if V is None:
                 V = Q
             batch_size = Q.shape[0]
-            W_Q = tf.layers.dense(Q, self.d_model,kernel_initializer=tf.contrib.layers.xavier_initializer( uniform=True, seed=None, dtype=tf.float32 ))
+            W_Q = tf.compat.v1.layers.dense(Q, self.d_model,kernel_initializer=tf.compat.v1.keras.initializers.VarianceScaling( scale=1.0, mode="fan_avg", distribution=("uniform" if True else "truncated_normal"), seed=None, dtype=tf.float32 ))
             # batch_size, candidate_num, num_attention_heads,d_k  ;;divide into groups whose num is num_attention_heads
             # batch_size, num_attention_heads, candidate_num,d_k
-            q_s = tf.transpose(tf.reshape(W_Q,[batch_size, -1, self.num_attention_heads,self.d_k]),perm=[0,2,1,3])
-            W_K = tf.layers.dense(K, self.d_model,kernel_initializer=tf.contrib.layers.xavier_initializer( uniform=True, seed=None, dtype=tf.float32 ))
-            k_s = tf.transpose(tf.reshape(W_K,[batch_size, -1, self.num_attention_heads,self.d_k]),perm=[0,2,1,3])
-            W_V = tf.layers.dense(V, self.d_model,kernel_initializer=tf.contrib.layers.xavier_initializer( uniform=True, seed=None, dtype=tf.float32 ))
-            v_s = tf.transpose(tf.reshape(W_V,[batch_size, -1, self.num_attention_heads,self.d_v]),perm=[0,2,1,3])
+            q_s = tf.transpose(a=tf.reshape(W_Q,[batch_size, -1, self.num_attention_heads,self.d_k]),perm=[0,2,1,3])
+            W_K = tf.compat.v1.layers.dense(K, self.d_model,kernel_initializer=tf.compat.v1.keras.initializers.VarianceScaling( scale=1.0, mode="fan_avg", distribution=("uniform" if True else "truncated_normal"), seed=None, dtype=tf.float32 ))
+            k_s = tf.transpose(a=tf.reshape(W_K,[batch_size, -1, self.num_attention_heads,self.d_k]),perm=[0,2,1,3])
+            W_V = tf.compat.v1.layers.dense(V, self.d_model,kernel_initializer=tf.compat.v1.keras.initializers.VarianceScaling( scale=1.0, mode="fan_avg", distribution=("uniform" if True else "truncated_normal"), seed=None, dtype=tf.float32 ))
+            v_s = tf.transpose(a=tf.reshape(W_V,[batch_size, -1, self.num_attention_heads,self.d_v]),perm=[0,2,1,3])
             # batch_size,head_num, candidate_num, d_k
             context, attn = ScaledDotProductAttention(self.d_k).attention(q_s, k_s, v_s)#,attn_mask)
             # batch_size,candidate_num,embedding_size
-            context= tf.reshape(tf.transpose(context,perm=[0,2,1,3]),[batch_size, -1, self.num_attention_heads*self.d_v])
+            context= tf.reshape(tf.transpose(a=context,perm=[0,2,1,3]),[batch_size, -1, self.num_attention_heads*self.d_v])
             return context
 
-    

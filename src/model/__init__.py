@@ -8,26 +8,26 @@ from model.attention import MultiHeadSelfAttention
 from model.attention import AdditiveAttention
 from typing import *
 import tensorflow as tf
-
+tf.compat.v1.disable_eager_execution()
 
 class TCNNConfig(object):
-    embedding_dim = 128  # 词向量维�?
+    embedding_dim = 128  # 词向量维度
     seq_length = 300  # 序列长度
-    num_classes = 10  # 类别�?
-    num_filters = 256  # 卷积核数�?
-    kernel_size = 3  # 卷积核尺�?
-    vocab_size = 5000  # 词汇表大�?
+    num_classes = 10  # 类别数
+    num_filters = 256  # 卷积核数量
+    kernel_size = 3  # 卷积核尺寸
+    vocab_size = 5000  # 词汇表大小
     attention_size = 64
 
-    hidden_dim = 256  # 全连接层神经�?
+    hidden_dim = 256  # 全连接层神经
 
     dropout_keep_prob = 0.5  # dropout保留比例
-    learning_rate = 5e-4  # 学习�?
+    learning_rate = 5e-4  # 学习率
 
     batch_size = 1  # 每批训练大小
-    num_epochs = 10  # 总迭代轮�?
+    num_epochs = 10  # 总迭代轮次
 
-    print_per_batch = 10  # 每多少轮输出一次结�?
+    print_per_batch = 10  # 每多少轮输出一次结果
     save_per_batch = 10  # 每多少轮存入tensorboard
 
     # For additive attention
@@ -51,11 +51,11 @@ class DotProductClickPredictor():
 class Model():
     def __init__(self, config: Union[TCNNConfig, type] = TCNNConfig, pretrained_word_embedding=None):
         self.config = config
-        self.input_click = tf.placeholder(
+        self.input_click = tf.compat.v1.placeholder(
             tf.int32, [self.config.batch_size, self.config.click_len, self.config.num_words_title], name='input_click')  # 一个句子的长度
-        self.input_candidate = tf.placeholder(
+        self.input_candidate = tf.compat.v1.placeholder(
             tf.int32, [self.config.batch_size, self.config.candidate_len, self.config.num_words_title], name='input_candidate')  # 一个句子的长度
-        self.keep_prob = tf.placeholder(
+        self.keep_prob = tf.compat.v1.placeholder(
             tf.float32, name='keep_prob')
         self.news_encoder = NewsEncoder(
             pretrained_word_embedding, self.keep_prob, config)
@@ -81,7 +81,7 @@ class Model():
             self.input_real = tf.constant(
                 1.0, dtype=tf.float32, shape=[self.config.batch_size], name='real')  # ,dtype=tf.float32
             self.loss = -tf.reduce_mean(self.real_score)  # cross_entropy#
-            self.optim = tf.train.AdamOptimizer(
+            self.optim = tf.compat.v1.train.AdamOptimizer(
                 learning_rate=self.config.learning_rate).minimize(self.loss)
 
         with tf.name_scope("accuracy"):
@@ -108,14 +108,14 @@ class NewsEncoder(object):
             config.query_vector_dim, config.num_filters)
 
     def newsencoder(self, news):
-        with tf.variable_scope("news_encoder", reuse=tf.AUTO_REUSE) as scope:
-            self.embedding = tf.get_variable(
+        with tf.compat.v1.variable_scope("news_encoder", reuse=tf.compat.v1.AUTO_REUSE) as scope:
+            self.embedding = tf.compat.v1.get_variable(
                 'embedding', [self.config.vocab_size, self.config.num_filters])
             self.embedding_inputs = tf.nn.embedding_lookup(
                 self.embedding, news)
             embedding_inputs = tf.nn.dropout(
                 self.embedding_inputs, rate=1-self.keep_prob)
-            conv = tf.layers.conv1d(embedding_inputs, self.config.num_filters,
+            conv = tf.compat.v1.layers.conv1d(embedding_inputs, self.config.num_filters,
                                     self.config.kernel_size, padding='same', name='conv1')
             fc = tf.nn.relu(conv)
             fc = tf.nn.dropout(fc, rate=1-self.keep_prob)
