@@ -16,12 +16,13 @@ for line in sys.stdin:
 	if cmd == 'exit':
 		break
 	elif cmd == 'recommend':
-		print(recommender.calc_confidence(json.loads(args[0])))
+		result = recommender.calc_confidence(json.loads(args[0]))
 	elif cmd == 'keywords':
-		print(extract_keywords(args[0], int(args[1]) if args[1] != None else 5))
+		result = extract_keywords(args[0], int(args[1]) if args[1] != None else 5)
 	elif cmd == "summary":
-		print(summarize(args[0], int(args[1]) if args[1] != None else 5))
+		result = summarize(args[0], int(args[1]) if args[1] != None else 5)
 	elif cmd == "sentiment":
 		sign, degree = analyze_sentiment(args[0])
-		print(degree if sign == 'positive' else -degree)
+		result = degree if sign == 'positive' else -degree
+	print(json.dumps(result))
 	sys.stdout.flush()
