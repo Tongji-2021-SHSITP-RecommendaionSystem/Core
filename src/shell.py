@@ -11,16 +11,17 @@ sys.stdout = TextIOWrapper(sys.stdout.buffer, encoding='utf8')
 sys.stdin = TextIOWrapper(sys.stdin.buffer, encoding='utf8')
 line: str
 for line in sys.stdin:
-	args = line.strip().split(' ', 1)
-	if args[0] == 'exit':
+	cmd, args = line.strip().split(' ', 1)
+	args:list = json.loads(args)
+	if cmd == 'exit':
 		break
-	elif args[0] == 'recommend':
-		print(recommender.calc_confidence(json.loads(args[1])))
-	elif args[0] == 'keywords':
-		print(extract_keywords(args[1], int(args[2]) if args[2] != None else 5))
-	elif args[0] == "summary":
-		print(summarize(args[1], int(args[2]) if args[2] != None else 5))
-	elif args[0] == "sentiment":
-		sign, degree = analyze_sentiment(args[1])
+	elif cmd == 'recommend':
+		print(recommender.calc_confidence(json.loads(args[0])))
+	elif cmd == 'keywords':
+		print(extract_keywords(args[0], int(args[1]) if args[1] != None else 5))
+	elif cmd == "summary":
+		print(summarize(args[0], int(args[1]) if args[1] != None else 5))
+	elif cmd == "sentiment":
+		sign, degree = analyze_sentiment(args[0])
 		print(degree if sign == 'positive' else -degree)
 	sys.stdout.flush()

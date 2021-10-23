@@ -47,21 +47,21 @@ export default class Shell {
 				viewed: viewed.map(news => ({ title: news.title, content: news.content } as SimpleNews)),
 				candidates: candidates.map(news => ({ title: news.title, content: news.content } as SimpleNews))
 			});
-			resolve(JSON.parse(await this.execute(`recommend ${body}`)));
+			resolve(JSON.parse(await this.execute("recommend", [body])));
 		})
 	}
 	public keywords(content: string, count: number = 5): Promise<string[]> {
-		return this.execute(`keywords ${content} ${count}`).then(JSON.parse);
+		return this.execute("keywords", [content, count]).then(JSON.parse);
 	}
 	public summary(content: string, count: number = 5): Promise<string[]> {
-		return this.execute(`summary ${content} ${count}`).then(JSON.parse);
+		return this.execute("summary", [content, count]).then(JSON.parse);
 	}
 	public sentiment(content: string): Promise<number> {
-		return this.execute(`sentiment ${content}`).then(Number);
+		return this.execute("sentiment", [content]).then(Number);
 	}
-	private async execute(command: string): Promise<string> {
+	private async execute(cmd: string, args: any[]): Promise<string> {
 		this._busy = true;
-		this.shell.send(command);
+		this.shell.send(`${cmd} ${JSON.stringify(args)}`);
 		return new Promise(resolve => {
 			Promise.wait(
 				() => this.available,
