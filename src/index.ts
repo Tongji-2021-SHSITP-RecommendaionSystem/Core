@@ -1,2 +1,2 @@
 export { default as ModelTaskAllocator } from "./allocator";
-export { default as Recommender } from "./shell";
+export { default as Shell } from "./shell";

@@ -1,56 +1,68 @@
 import "basic-type-extensions";
 import { News } from "news-recommendation-entity";
-import Recommender from "./shell";
+import Shell from "./shell";
 import settings from "../settings.json";
 
-interface Task {
-	shell: Recommender;
-	isBusy: boolean;
-}
-export default class ModelTaskAllocator {
-	protected tasks: Map<number, Task>;
+export default class Runner {
+	protected shells: Map<number, Shell>;
 	public constructor() {
-		this.tasks = new Map();
+		this.shells = new Map();
 	}
 	public async recommend(viewed: News[], candidates: News[]): Promise<Array<[News, number]>> {
 		return new Promise(async (resolve, reject) => {
 			viewed = viewed.shuffle().slice(0, settings.model.maxViewed);
 			const batchSize = Math.ceil(candidates.length / settings.model.candidatesPerBatch);
-			this.getTask(batchSize).then(task => {
-				task.shell.execute(viewed, candidates).then(
+			this.getShell(batchSize).then(shell => {
+				shell.recommend(viewed, candidates).then(
 					confidence => {
 						const result = new Array<[News, number]>(candidates.length);
 						for (let i = 0; i < candidates.length; ++i)
 							result[i] = [candidates[i], confidence[i]];
 						resolve(result.keySort(member => member[1]).reverse());
-					},
-					error => reject(error)
+					}, reject
 				)
 			});
 		})
 	}
 	public launch(): void {
-		this.tasks.forEach(task => task.shell.launch());
+		this.shells.forEach(shell => shell.launch());
 	}
 	public exit(): void {
-		this.tasks.forEach(task => task.shell.exit());
+		this.shells.forEach(shell => shell.exit());
 	}
-	protected async getTask(batchSize: number): Promise<Task> {
-		return new Promise(async resolve => {
-			if (this.tasks.has(batchSize)) {
-				const task = this.tasks.get(batchSize);
-				if (task.isBusy)
-					await Promise.wait(() => !task.isBusy, settings.model.timerInterval);
-				resolve(task);
-			}
-			else {
-				const task: Task = {
-					shell: new Recommender(batchSize),
-					isBusy: false
-				}
-				this.tasks.set(batchSize, task);
-				resolve(task);
-			}
-		});
+	public keywords(content: string, count: number = 5): Promise<string[]> {
+		return this.getShell().then(shell => shell.keywords(content, count));
+	}
+	public summary(content: string, count: number = 5): Promise<string[]> {
+		return this.getShell().then(shell => shell.summary(content, count));
+	}
+	public sentiment(content: string): Promise<number> {
+		return this.getShell().then(shell => shell.sentiment(content));
+	}
+	protected getShell(): Promise<Shell>;
+	protected getShell(batchSize: number): Promise<Shell>;
+	protected async getShell(batchSize?: number): Promise<Shell> {
+		if (batchSize == null) {
+			await Promise.wait(() => {
+				for (const shell of this.shells.values())
+					if (!shell.busy)
+						return true;
+				return false;
+			}, settings.model.timerInterval);
+			for (const shell of this.shells.values())
+				if (!shell.busy)
+					return shell;
+		}
+		if (this.shells.has(batchSize)) {
+			const shell = this.shells.get(batchSize);
+			if (shell.busy)
+				await Promise.wait(() => !shell.busy, settings.model.timerInterval);
+			return shell;
+		}
+		else {
+			const shell = new Shell(batchSize);
+			this.shells.set(batchSize, shell);
+			return shell;
+		}
 	}
 }
