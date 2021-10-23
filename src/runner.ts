@@ -1,17 +1,18 @@
 import "basic-type-extensions";
 import { News } from "news-recommendation-entity";
 import Shell from "./shell";
-import settings from "../settings.json";
+import Settings from "../settings.json";
 
 export default class Runner {
 	protected shells: Map<number, Shell>;
 	public constructor() {
 		this.shells = new Map();
+		this.shells.set(-1, new Shell());
 	}
 	public async recommend(viewed: News[], candidates: News[]): Promise<Array<[News, number]>> {
 		return new Promise(async (resolve, reject) => {
-			viewed = viewed.shuffle().slice(0, settings.model.maxViewed);
-			const batchSize = Math.ceil(candidates.length / settings.model.candidatesPerBatch);
+			viewed = viewed.shuffle().slice(0, Settings.model.maxViewed);
+			const batchSize = Math.ceil(candidates.length / Settings.model.candidatesPerBatch);
 			this.getShell(batchSize).then(shell => {
 				shell.recommend(viewed, candidates).then(
 					confidence => {
@@ -48,7 +49,7 @@ export default class Runner {
 					if (!shell.busy)
 						return true;
 				return false;
-			}, settings.model.timerInterval);
+			}, Settings.model.timerInterval);
 			for (const shell of this.shells.values())
 				if (!shell.busy)
 					return shell;
@@ -56,7 +57,7 @@ export default class Runner {
 		if (this.shells.has(batchSize)) {
 			const shell = this.shells.get(batchSize);
 			if (shell.busy)
-				await Promise.wait(() => !shell.busy, settings.model.timerInterval);
+				await Promise.wait(() => !shell.busy, Settings.model.timerInterval);
 			return shell;
 		}
 		else {

@@ -8,8 +8,8 @@ interface SimpleNews {
 	content: string;
 }
 export default class Shell {
-	public static script = "src/shell.py";
-	public batchSize: number;
+	public static script = `${__dirname}/shell.py`;
+	public batchSize?: number;
 	protected shell: PythonShell;
 	protected available: boolean = false;
 	protected result: string;
@@ -17,7 +17,7 @@ export default class Shell {
 
 	public get busy() { return this._busy; }
 
-	public constructor(batchSize: number) {
+	public constructor(batchSize?: number) {
 		this.batchSize = batchSize;
 		this.launch();
 	}
@@ -26,13 +26,16 @@ export default class Shell {
 		if (!this.shell || this.shell.terminated) {
 			this.shell = new PythonShell(Shell.script, {
 				mode: "text",
-				args: [this.batchSize.toString()],
+				args: this.batchSize ? [this.batchSize.toString()] : [],
 				pythonPath: settings.model.pythonPath
 			});
 			this.shell.on("message", message => {
 				this.result = message;
 				this.available = true;
 			});
+			this.shell.on("pythonError", console.log);
+			this.shell.on("stderr", console.log);
+			this.shell.on("error", console.log);
 		}
 	}
 	public exit() {

@@ -1,6 +1,6 @@
 {
 	"model": {
-		"pythonPath": "D:/Program Files/Python/3.7/python.exe",
+		"pythonPath": "python.exe",
 		"timerInterval": 50,
 		"maxViewed": 20,
 		"candidatesPerBatch": 5
