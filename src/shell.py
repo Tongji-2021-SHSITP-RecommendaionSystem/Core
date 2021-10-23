@@ -2,7 +2,7 @@ from io import TextIOWrapper
 import sys
 import json
 
-from train import Recommender
+from recommender import Recommender
 
 recommender = Recommender(int(sys.argv[1]) if len(sys.argv) > 1 else 1)
 
