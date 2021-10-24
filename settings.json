@@ -1,6 +1,5 @@
 {
 	"model": {
-		"pythonPath": "python.exe",
 		"timerInterval": 50,
 		"maxViewed": 20,
 		"candidatesPerBatch": 5

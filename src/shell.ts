@@ -27,7 +27,7 @@ export default class Shell {
 			this.shell = new PythonShell(Shell.script, {
 				mode: "text",
 				args: this.batchSize ? [this.batchSize.toString()] : [],
-				pythonPath: settings.model.pythonPath
+				pythonPath: `${__dirname}/../.venv/Scripts/python.exe`
 			});
 			this.shell.on("message", message => {
 				this.result = message;
